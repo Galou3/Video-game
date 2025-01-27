@@ -1,57 +1,166 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8" />
   <title>Microservices Demo</title>
+  <!-- Import Tailwind CSS via CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" rel="stylesheet" />
 </head>
-<body>
-  <h1>Demo Microservices</h1>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+  <header class="bg-blue-600 text-white py-4 mb-4">
+    <div class="container mx-auto px-4">
+      <h1 class="text-2xl font-bold">Demo Microservices</h1>
+    </div>
+  </header>
 
-  <div>
-    <h2>Login</h2>
-    <input id="username" placeholder="Username" />
-    <input id="password" placeholder="Password" type="password" />
-    <button onclick="login()">Se connecter</button>
-  </div>
+  <main class="container mx-auto px-4 flex-grow">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <!-- Register Panel -->
+      <div class="bg-white rounded shadow p-6">
+        <h2 class="text-xl font-semibold mb-4 text-blue-600">Créer un compte</h2>
+        <form id="registerForm" class="space-y-4">
+          <div>
+            <label class="block mb-1 font-medium text-gray-700">Username</label>
+            <input type="text" id="registerUsername" class="w-full border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 p-2" placeholder="Choisis un username" required />
+          </div>
+          <div>
+            <label class="block mb-1 font-medium text-gray-700">Password</label>
+            <input type="password" id="registerPassword" class="w-full border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 p-2" placeholder="Choisis un mot de passe" required />
+          </div>
+          <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors">
+            Créer mon compte
+          </button>
+        </form>
+      </div>
 
-  <div>
-    <h2>Lancer un combat</h2>
-    <input id="enemyId" placeholder="Enemy ID" />
-    <button onclick="startCombat()">Start Combat</button>
-  </div>
+      <!-- Login Panel -->
+      <div class="bg-white rounded shadow p-6">
+        <h2 class="text-xl font-semibold mb-4 text-blue-600">Se connecter</h2>
+        <form id="loginForm" class="space-y-4">
+          <div>
+            <label class="block mb-1 font-medium text-gray-700">Username</label>
+            <input type="text" id="loginUsername" class="w-full border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 p-2" placeholder="Ton username" required />
+          </div>
+          <div>
+            <label class="block mb-1 font-medium text-gray-700">Password</label>
+            <input type="password" id="loginPassword" class="w-full border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 p-2" placeholder="Ton mot de passe" required />
+          </div>
+          <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition-colors">
+            Se connecter
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Zone d'affichage des résultats / messages -->
+    <div id="messageArea" class="mt-6 text-center"></div>
+
+    <!-- Start Combat Panel (optionnel) -->
+    <div class="bg-white rounded shadow p-6 mt-8 max-w-md mx-auto">
+      <h2 class="text-xl font-semibold mb-4 text-blue-600">Lancer un Combat</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="block mb-1 font-medium text-gray-700">Enemy ID</label>
+          <input type="text" id="enemyId" class="w-full border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 p-2" placeholder="ID de l'ennemi" />
+        </div>
+        <button id="startCombatBtn" class="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700 transition-colors">
+          Start Combat
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-gray-800 text-white py-4 mt-4">
+    <div class="container mx-auto px-4 text-center">
+      <p class="text-sm">&copy; 2025 - Microservices Demo</p>
+    </div>
+  </footer>
 
   <script>
     let token = null;
 
-    async function login() {
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
+    // Sélecteurs
+    const registerForm = document.getElementById('registerForm');
+    const loginForm = document.getElementById('loginForm');
+    const messageArea = document.getElementById('messageArea');
+    const startCombatBtn = document.getElementById('startCombatBtn');
+
+    // URLs de tes microservices (à adapter si besoin)
+    const AUTH_SERVICE_URL = 'http://localhost:3001';
+    const COMBAT_SERVICE_URL = 'http://localhost:3002';
+
+    // --------------------
+    // REGISTER
+    // --------------------
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('registerUsername').value.trim();
+      const password = document.getElementById('registerPassword').value;
+
       try {
-        const response = await fetch('http://localhost:3001/login', {
+        const response = await fetch(`${AUTH_SERVICE_URL}/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        if (!response.ok) {
+          // handle error
+          const errData = await response.json();
+          showMessage(`Erreur inscription: ${errData.error || response.statusText}`, true);
+          return;
+        }
+        const data = await response.json();
+        showMessage(`Inscription réussie: ${data.message}`);
+        // Optionnel: on pourrait automatiquement log l'utilisateur
+        // ou le rediriger vers le formulaire de login
+      } catch (error) {
+        showMessage('Erreur réseau lors de l’inscription.', true);
+        console.error(error);
+      }
+    });
+
+    // --------------------
+    // LOGIN
+    // --------------------
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value;
+
+      try {
+        const response = await fetch(`${AUTH_SERVICE_URL}/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
         });
         const data = await response.json();
-        if (data.token) {
+        if (response.ok && data.token) {
           token = data.token;
-          alert('Connecté ! Token = ' + token);
+          showMessage(`Connecté avec succès !<br>Token = <code>${token}</code>`);
         } else {
-          alert('Échec de la connexion');
+          showMessage(`Échec de la connexion: ${data.error || 'Inconnu'}`, true);
         }
       } catch (error) {
+        showMessage('Erreur réseau lors de la connexion.', true);
         console.error(error);
       }
-    }
+    });
 
-    async function startCombat() {
+    // --------------------
+    // START COMBAT (exemple)
+    // --------------------
+    startCombatBtn.addEventListener('click', async () => {
       if (!token) {
-        alert('Pas de token, connecte-toi d’abord.');
+        showMessage('Vous devez être connecté pour lancer un combat.', true);
         return;
       }
-      const enemyId = document.getElementById('enemyId').value;
+      const enemyId = document.getElementById('enemyId').value.trim();
+      if (!enemyId) {
+        showMessage('Veuillez saisir un Enemy ID.', true);
+        return;
+      }
       try {
-        const response = await fetch('http://localhost:3002/start-combat', {
+        const response = await fetch(`${COMBAT_SERVICE_URL}/start-combat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -60,10 +169,22 @@
           body: JSON.stringify({ enemyId })
         });
         const data = await response.json();
-        alert(JSON.stringify(data));
+        if (response.ok) {
+          showMessage(`Combat démarré avec succès !<br>${JSON.stringify(data)}`);
+        } else {
+          showMessage(`Erreur lors du lancement du combat: ${data.error || 'Inconnu'}`, true);
+        }
       } catch (error) {
+        showMessage('Erreur réseau lors du lancement du combat.', true);
         console.error(error);
       }
+    });
+
+    // Fonction utilitaire pour afficher un message (succès ou erreur)
+    function showMessage(msg, isError = false) {
+      messageArea.innerHTML = `<div class="${
+        isError ? 'text-red-600' : 'text-green-600'
+      } font-semibold my-4">${msg}</div>`;
     }
   </script>
 </body>
