@@ -8,7 +8,7 @@ require('dotenv').config();
 
 const app = express();
 app.use(express.json());
-
+const amqp = require('amqplib');
 // --- Config & Connexion Mongo ---
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/heroesdb';
 mongoose.connect(MONGO_URI, {
@@ -70,6 +70,54 @@ app.get('/heroes/:id', verifyToken, async (req, res) => {
     res.status(500).json({ error: 'Erreur interne.' });
   }
 });
+
+async function listenCombatEvents() {
+  try {
+    const RABBIT_URI = process.env.RABBITMQ_URI || 'amqp://localhost:5672';
+    const conn = await amqp.connect(RABBIT_URI);
+    const channel = await conn.createChannel();
+    await channel.assertExchange('events', 'topic', { durable: false });
+
+    const { queue } = await channel.assertQueue('', { exclusive: true });
+    // Souscription à "combat.end"
+    await channel.bindQueue(queue, 'events', 'combat.end');
+    console.log('[HeroService] En attente des COMBAT_END...');
+
+    channel.consume(queue, async (msg) => {
+      if (msg.content) {
+        const event = JSON.parse(msg.content.toString());
+        console.log('[HeroService] COMBAT_END reçu:', event);
+
+        // On cherche le héros
+        const hero = await Hero.findOne({ _id: event.heroId });
+        if (!hero) {
+          console.log('[HeroService] Héros introuvable pour ce combat.');
+          return;
+        }
+
+        // Mettre à jour les PV si le héros a survécu
+        if (event.winner === 'hero') {
+          // Le héros a gagné, on met ses HP restants
+          hero.hp = event.heroHPRemaining;
+          // Eventuellement on lui file de l’or
+          hero.gold += 10; // ex. reward
+          // On peut augmenter son level, etc.
+          hero.save();
+          console.log(`[HeroService] Le héros ${hero._id} a gagné le combat.`);
+        } else {
+          // Le héros a perdu
+          hero.hp = 0;
+          await hero.save();
+          console.log(`[HeroService] Le héros ${hero._id} a perdu le combat.`);
+        }
+      }
+    }, { noAck: true });
+  } catch (err) {
+    console.error('Erreur d’abonnement COMBAT_END:', err);
+  }
+}
+
+listenCombatEvents();
 
 const PORT = process.env.PORT || 3003;
 app.listen(PORT, () => {
