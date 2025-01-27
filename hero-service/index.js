@@ -1,45 +1,77 @@
-const amqp = require('amqplib');
+// file: heroService.js
+const express = require('express');
 const mongoose = require('mongoose');
+const { verifyToken } = require('../authservice/authMiddlewareExample'); 
+  // OU recopie le code verifyToken dans ce fichier. 
+  // (Ici, on simule qu'on a un export depuis AuthService.)
+require('dotenv').config();
 
-// Connexion MongoDB
-mongoose.connect('mongodb://localhost:27017/heroesdb', {
+const app = express();
+app.use(express.json());
+
+// --- Config & Connexion Mongo ---
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/heroesdb';
+mongoose.connect(MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 });
 
+// --- Modèle Hero ---
 const heroSchema = new mongoose.Schema({
-  userId: String,
-  name: String,
-  level: Number,
-  inventory: [String],
+  userId: { type: String, required: true },
+  name: { type: String, required: true },
+  level: { type: Number, default: 1 },
+  hp: { type: Number, default: 100 },
+  gold: { type: Number, default: 0 },
+  inventory: { type: [String], default: [] },
+  // On peut ajouter d'autres stats (force, défense, etc.)
 });
 const Hero = mongoose.model('Hero', heroSchema);
 
-async function main() {
-  const conn = await amqp.connect('amqp://admin:admin@localhost:5672');
-  const channel = await conn.createChannel();
+// --- Récupérer les héros du user connecté ---
+app.get('/heroes', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const heroes = await Hero.find({ userId });
+    res.json(heroes);
+  } catch (err) {
+    console.error('Erreur /heroes (GET):', err);
+    res.status(500).json({ error: 'Erreur lors de la récupération des héros.' });
+  }
+});
 
-  await channel.assertExchange('events', 'topic', { durable: false });
-  const { queue } = await channel.assertQueue('', { exclusive: true });
-  // Ici, on veut écouter par exemple les événements de type "combat.end"
-  await channel.bindQueue(queue, 'events', 'combat.end');
-
-  console.log('[HeroService] En attente d’événements COMBAT_END...');
-
-  channel.consume(queue, async msg => {
-    const event = JSON.parse(msg.content.toString());
-    console.log('[HeroService] Reçu un événement : ', event);
-
-    if (event.type === 'COMBAT_END') {
-      // Mettre à jour l’XP, l’inventaire du héros, etc.
-      const hero = await Hero.findOne({ userId: event.userId });
-      if (hero) {
-        hero.level = hero.level + 1; // ex. simpliste
-        await hero.save();
-        console.log(`[HeroService] Héros mis à jour après combat pour userId=${event.userId}`);
-      }
+// --- Créer un nouveau héros ---
+app.post('/heroes', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ error: 'Nom du héros requis.' });
     }
-  }, { noAck: true });
-}
+    const newHero = new Hero({ userId, name });
+    await newHero.save();
+    res.status(201).json(newHero);
+  } catch (err) {
+    console.error('Erreur /heroes (POST):', err);
+    res.status(500).json({ error: 'Erreur lors de la création du héros.' });
+  }
+});
 
-main().catch(console.error);
+// Ex: pour voir le détail d’un héros
+app.get('/heroes/:id', verifyToken, async (req, res) => {
+  try {
+    const hero = await Hero.findOne({ _id: req.params.id, userId: req.user.userId });
+    if (!hero) {
+      return res.status(404).json({ error: 'Héros introuvable ou appartenant à un autre utilisateur.' });
+    }
+    res.json(hero);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur interne.' });
+  }
+});
+
+const PORT = process.env.PORT || 3003;
+app.listen(PORT, () => {
+  console.log(`[HeroService] Démarré sur le port ${PORT}`);
+});
