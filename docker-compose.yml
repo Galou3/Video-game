@@ -1,0 +1,49 @@
+
+
+services:
+  auth-db:
+    image: postgres
+    environment:
+      POSTGRES_DB: auth
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build: ./auth-service
+    environment:
+      DATABASE_URL: "postgres://postgres:postgres@auth-db:5432/auth"
+    depends_on:
+      auth-db:
+        condition: service_healthy
+
+  hero-service:
+    build: ./hero-service
+    ports:
+      - "3002:3002"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@hero-db:5432/hero
+    depends_on:
+      - hero-db
+
+  hero-db:
+    image: postgres
+    environment:
+      POSTGRES_DB: hero
+      POSTGRES_PASSWORD: postgres
+
+  frontend:
+    image: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+    depends_on:
+      - api-gateway
+
+networks:
+  default:
+    driver: bridge
