@@ -1,16 +1,70 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Jeu de Donjon</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <title>Microservices Demo</title>
 </head>
 <body>
-    <div class="container">
-        <h1>Créer un Héros</h1>
-        <input type="text" id="heroName" placeholder="Nom du héros">
-        <button onclick="createHero()">Créer</button>
-        <div id="heroList"></div>
-    </div>
-    <script src="script.js"></script>
+  <h1>Demo Microservices</h1>
+
+  <div>
+    <h2>Login</h2>
+    <input id="username" placeholder="Username" />
+    <input id="password" placeholder="Password" type="password" />
+    <button onclick="login()">Se connecter</button>
+  </div>
+
+  <div>
+    <h2>Lancer un combat</h2>
+    <input id="enemyId" placeholder="Enemy ID" />
+    <button onclick="startCombat()">Start Combat</button>
+  </div>
+
+  <script>
+    let token = null;
+
+    async function login() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      try {
+        const response = await fetch('http://localhost:3001/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await response.json();
+        if (data.token) {
+          token = data.token;
+          alert('Connecté ! Token = ' + token);
+        } else {
+          alert('Échec de la connexion');
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    async function startCombat() {
+      if (!token) {
+        alert('Pas de token, connecte-toi d’abord.');
+        return;
+      }
+      const enemyId = document.getElementById('enemyId').value;
+      try {
+        const response = await fetch('http://localhost:3002/start-combat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Auth-Token': token
+          },
+          body: JSON.stringify({ enemyId })
+        });
+        const data = await response.json();
+        alert(JSON.stringify(data));
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  </script>
 </body>
 </html>
