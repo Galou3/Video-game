@@ -1,30 +1,45 @@
-const express = require('express');
-const { Pool } = require('pg');
-const app = express();
-app.use(express.json());
+const amqp = require('amqplib');
+const mongoose = require('mongoose');
 
-const pool = new Pool({
-  user: 'postgres',
-  host: 'hero-db',
-  database: 'hero',
-  password: 'postgres',
-  port: 5432,
+// Connexion MongoDB
+mongoose.connect('mongodb://localhost:27017/heroesdb', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 });
 
-app.get('/heroes', async (req, res) => {
-  const result = await pool.query('SELECT * FROM heroes');
-  res.json(result.rows);
+const heroSchema = new mongoose.Schema({
+  userId: String,
+  name: String,
+  level: Number,
+  inventory: [String],
 });
+const Hero = mongoose.model('Hero', heroSchema);
 
-app.post('/heroes', async (req, res) => {
-  const { name } = req.body;
-  const result = await pool.query(
-    'INSERT INTO heroes (name, level, health) VALUES ($1, 1, 100) RETURNING *',
-    [name]
-  );
-  res.json(result.rows[0]);
-});
+async function main() {
+  const conn = await amqp.connect('amqp://admin:admin@localhost:5672');
+  const channel = await conn.createChannel();
 
-app.listen(3002, () => {
-  console.log('Hero Service running on port 3002');
-});
+  await channel.assertExchange('events', 'topic', { durable: false });
+  const { queue } = await channel.assertQueue('', { exclusive: true });
+  // Ici, on veut écouter par exemple les événements de type "combat.end"
+  await channel.bindQueue(queue, 'events', 'combat.end');
+
+  console.log('[HeroService] En attente d’événements COMBAT_END...');
+
+  channel.consume(queue, async msg => {
+    const event = JSON.parse(msg.content.toString());
+    console.log('[HeroService] Reçu un événement : ', event);
+
+    if (event.type === 'COMBAT_END') {
+      // Mettre à jour l’XP, l’inventaire du héros, etc.
+      const hero = await Hero.findOne({ userId: event.userId });
+      if (hero) {
+        hero.level = hero.level + 1; // ex. simpliste
+        await hero.save();
+        console.log(`[HeroService] Héros mis à jour après combat pour userId=${event.userId}`);
+      }
+    }
+  }, { noAck: true });
+}
+
+main().catch(console.error);
