@@ -1,70 +1,83 @@
-// authService.js
+// Exemple complet pour gérer l'inscription
+// -------------------------------------------------------
 const express = require('express');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const bodyParser = require('body-parser');
-const mongoose = require('mongoose'); // ou un client SQL, selon ton choix
-// Par simplicité on suppose MongoDB et une collection "users"
+const mongoose = require('mongoose');
 
 const app = express();
-app.use(bodyParser.json());
+app.use(express.json());
 
-// Connexion à MongoDB (adapter la string de connexion)
+// Exemple de connexion à ta base Mongo
 mongoose.connect('mongodb://localhost:27017/authdb', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 });
 
+// Schéma et modèle d'utilisateur
 const userSchema = new mongoose.Schema({
-  username: String,
-  password: String,
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true }
 });
 const User = mongoose.model('User', userSchema);
 
-// Clé secrète pour JWT - à placer dans une vraie config
-const SECRET_KEY = 'monSecretJWT';
+const SECRET_KEY = 'tonSecretJWT'; // À mettre dans une variable d'env en prod
 
-// Endpoint d’inscription
+// Endpoint pour s'inscrire
 app.post('/register', async (req, res) => {
-  const { username, password } = req.body;
-  // Idéalement hacher le mot de passe avant de le stocker
-  const newUser = new User({ username, password });
-  await newUser.save();
-  res.json({ message: 'Utilisateur créé' });
-});
-
-// Endpoint de login
-app.post('/login', async (req, res) => {
-  const { username, password } = req.body;
-  const user = await User.findOne({ username, password });
-  if (!user) {
-    return res.status(401).json({ error: 'Identifiants invalides' });
-  }
-  // Génération d’un token
-  const token = jwt.sign({ userId: user._id }, SECRET_KEY, { expiresIn: '1h' });
-  res.json({ token });
-});
-
-// Middleware de validation du token
-function verifyToken(req, res, next) {
-  const token = req.headers['x-auth-token'];
-  if (!token) {
-    return res.status(403).json({ error: 'Token manquant' });
-  }
   try {
-    const decoded = jwt.verify(token, SECRET_KEY);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    res.status(403).json({ error: 'Token invalide' });
-  }
-}
+    const { username, password } = req.body;
 
-// Exemple d’endpoint protégé
-app.get('/profile', verifyToken, async (req, res) => {
-  const user = await User.findById(req.user.userId);
-  res.json({ user });
+    // Vérifier si l'utilisateur existe déjà
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(409).json({ error: 'Cet utilisateur existe déjà.' });
+    }
+
+    // Hachage du mot de passe (exemple : 10 rounds de salage)
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Enregistrement en base
+    const newUser = new User({
+      username,
+      password: hashedPassword
+    });
+    await newUser.save();
+
+    res.status(201).json({ message: 'Utilisateur créé avec succès.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur lors de la création du compte.' });
+  }
 });
 
+// Endpoint pour se connecter
+app.post('/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // Vérifier si l'utilisateur existe
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(401).json({ error: 'Identifiants invalides.' });
+    }
+
+    // Comparer le mot de passe hashé
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return res.status(401).json({ error: 'Identifiants invalides.' });
+    }
+
+    // Génération d’un token JWT
+    const token = jwt.sign({ userId: user._id }, SECRET_KEY, { expiresIn: '1h' });
+    res.json({ token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur lors de la connexion.' });
+  }
+});
+
+// Exposer l'API sur le port 3001
 app.listen(3001, () => {
   console.log('AuthService démarré sur le port 3001');
 });
