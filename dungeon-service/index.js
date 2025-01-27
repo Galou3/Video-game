@@ -2,7 +2,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const amqp = require('amqplib');
-const { verifyToken } = require('../authservice/authMiddlewareExample');
+import { verifyToken } from '../auth-service/index';
 require('dotenv').config();
 
 const app = express();
@@ -18,8 +18,8 @@ mongoose.connect(MONGO_URI, {
 // --- Modèles ---
 const dungeonSchema = new mongoose.Schema({
   name: String,
-  layout: Array, 
-  // layout = [ { position: 0, monster: 'Goblin' }, { position: 1, monster: null }, ... ] 
+  layout: Array,
+  // layout = [ { position: 0, monster: 'Goblin' }, { position: 1, monster: null }, ... ]
   // ou un format plus complexe
 });
 const Dungeon = mongoose.model('Dungeon', dungeonSchema);

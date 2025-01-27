@@ -1,8 +1,8 @@
 // file: heroService.js
 const express = require('express');
 const mongoose = require('mongoose');
-const { verifyToken } = require('../authservice/authMiddlewareExample'); 
-  // OU recopie le code verifyToken dans ce fichier. 
+import { verifyToken } from '../auth-service/index';
+  // OU recopie le code verifyToken dans ce fichier.
   // (Ici, on simule qu'on a un export depuis AuthService.)
 require('dotenv').config();
 const amqp = require('amqplib');

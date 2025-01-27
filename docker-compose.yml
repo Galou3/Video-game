@@ -27,11 +27,11 @@ services:
       - mongo_data:/data/db
 
   # ---- AuthService ----
-  authservice:
-    build: 
-      context: ./authservice    # Dockerfile et code dans /authservice
+  auth-service:
+    build:
+      context: ./auth-service    # Dockerfile et code dans /authservice
       dockerfile: Dockerfile
-    container_name: authservice
+    container_name: auth-service
     restart: unless-stopped
     depends_on:
       - mongodb
@@ -48,11 +48,11 @@ services:
       - microservices-net
 
   # ---- CombatService ----
-  combatservice:
+  combat-service:
     build:
-      context: ./combatservice
+      context: ./combat-service
       dockerfile: Dockerfile
-    container_name: combatservice
+    container_name: combat-service
     restart: unless-stopped
     depends_on:
       - rabbitmq
@@ -66,11 +66,11 @@ services:
       - microservices-net
 
   # ---- DungeonService ----
-  dungeonservice:
+  dungeon-service:
     build:
-      context: ./dungeonservice
+      context: ./dungeon-service
       dockerfile: Dockerfile
-    container_name: dungeonservice
+    container_name: dungeon-service
     restart: unless-stopped
     depends_on:
       - mongodb
@@ -82,33 +82,17 @@ services:
       - microservices-net
 
   # ---- HeroService ----
-  heroservice:
+  hero-service:
     build:
-      context: ./heroservice
+      context: ./hero-service
       dockerfile: Dockerfile
-    container_name: heroservice
+    container_name: hero-service
     restart: unless-stopped
     depends_on:
       - mongodb
       - rabbitmq
     environment:
       MONGO_URI: mongodb://mongodb:27017/heroesdb
-      RABBITMQ_URI: amqp://admin:admin@rabbitmq:5672
-    networks:
-      - microservices-net
-
-  # ---- LogService ----
-  logservice:
-    build:
-      context: ./logservice
-      dockerfile: Dockerfile
-    container_name: logservice
-    restart: unless-stopped
-    depends_on:
-      - mongodb
-      - rabbitmq
-    environment:
-      MONGO_URI: mongodb://mongodb:27017/logsdb
       RABBITMQ_URI: amqp://admin:admin@rabbitmq:5672
     networks:
       - microservices-net

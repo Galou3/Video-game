@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "amqplib": "^0.10.5",
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
+    "http-proxy-middleware": "^3.0.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-merge": "^0.4.0",
+    "swagger-ui-express": "^5.0.1"
+  }
+}
