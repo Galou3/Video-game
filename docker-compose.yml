@@ -1,49 +1,121 @@
-
+version: '3.8'
 
 services:
-  auth-db:
-    image: postgres
+  # ---- Broker RabbitMQ ----
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"    # Port AMQP
+      - "15672:15672"  # Port interface management
     environment:
-      POSTGRES_DB: auth
-      POSTGRES_PASSWORD: postgres
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    networks:
+      - microservices-net
 
-  auth-service:
-    build: ./auth-service
-    environment:
-      DATABASE_URL: "postgres://postgres:postgres@auth-db:5432/auth"
+  # ---- Base de données MongoDB ----
+  mongodb:
+    image: mongo:5
+    container_name: mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    networks:
+      - microservices-net
+    volumes:
+      - mongo_data:/data/db
+
+  # ---- AuthService ----
+  authservice:
+    build: 
+      context: ./authservice    # Dockerfile et code dans /authservice
+      dockerfile: Dockerfile
+    container_name: authservice
+    restart: unless-stopped
     depends_on:
-      auth-db:
-        condition: service_healthy
+      - mongodb
+      - rabbitmq
+    ports:
+      - "3001:3001"
+    environment:
+      # Quelques variables d'exemple
+      PORT: 3001
+      JWT_SECRET_KEY: monSecretJWT
+      MONGO_URI: mongodb://mongodb:27017/authdb
+      RABBITMQ_URI: amqp://admin:admin@rabbitmq:5672
+    networks:
+      - microservices-net
 
-  hero-service:
-    build: ./hero-service
+  # ---- CombatService ----
+  combatservice:
+    build:
+      context: ./combatservice
+      dockerfile: Dockerfile
+    container_name: combatservice
+    restart: unless-stopped
+    depends_on:
+      - rabbitmq
     ports:
       - "3002:3002"
     environment:
-      - DATABASE_URL=postgres://postgres:postgres@hero-db:5432/hero
-    depends_on:
-      - hero-db
+      PORT: 3002
+      JWT_SECRET_KEY: monSecretJWT
+      RABBITMQ_URI: amqp://admin:admin@rabbitmq:5672
+    networks:
+      - microservices-net
 
-  hero-db:
-    image: postgres
+  # ---- DungeonService ----
+  dungeonservice:
+    build:
+      context: ./dungeonservice
+      dockerfile: Dockerfile
+    container_name: dungeonservice
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+      - rabbitmq
     environment:
-      POSTGRES_DB: hero
-      POSTGRES_PASSWORD: postgres
+      MONGO_URI: mongodb://mongodb:27017/dungeondb
+      RABBITMQ_URI: amqp://admin:admin@rabbitmq:5672
+    networks:
+      - microservices-net
 
-  frontend:
-    image: nginx
-    ports:
-      - "80:80"
-    volumes:
-      - ./frontend:/usr/share/nginx/html
+  # ---- HeroService ----
+  heroservice:
+    build:
+      context: ./heroservice
+      dockerfile: Dockerfile
+    container_name: heroservice
+    restart: unless-stopped
     depends_on:
-      - api-gateway
+      - mongodb
+      - rabbitmq
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/heroesdb
+      RABBITMQ_URI: amqp://admin:admin@rabbitmq:5672
+    networks:
+      - microservices-net
+
+  # ---- LogService ----
+  logservice:
+    build:
+      context: ./logservice
+      dockerfile: Dockerfile
+    container_name: logservice
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+      - rabbitmq
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/logsdb
+      RABBITMQ_URI: amqp://admin:admin@rabbitmq:5672
+    networks:
+      - microservices-net
+
+volumes:
+  mongo_data:
 
 networks:
-  default:
+  microservices-net:
     driver: bridge
