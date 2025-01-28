@@ -28,10 +28,10 @@ router.post('/register',
         const newUser = new User({ username, hash });
         await newUser.save();
 
-        res.status(201).json({ message: 'Utilisateur créé avec succès.' });
+        return res.status(201).json({ message: 'Utilisateur créé avec succès.' });
     } catch (err) {
         console.error('Erreur /register:', err);
-        res.status(500).json({ error: 'Erreur lors de la création du compte.' });
+        return res.status(500).json({ error: 'Erreur lors de la création du compte.' });
     }
 });
 
