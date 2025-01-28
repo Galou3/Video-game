@@ -2,7 +2,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const amqp = require('amqplib');
-import { verifyToken } from '../auth-service/index';
 require('dotenv').config();
 
 const app = express();
@@ -47,6 +46,10 @@ async function connectRabbit() {
   }
 }
 connectRabbit();
+
+const verifyToken = () => {
+
+}
 
 // --- Lister les donjons disponibles ---
 app.get('/dungeons', verifyToken, async (req, res) => {

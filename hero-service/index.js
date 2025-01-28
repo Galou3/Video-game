@@ -1,7 +1,7 @@
 // file: heroService.js
 const express = require('express');
 const mongoose = require('mongoose');
-import { verifyToken } from '../auth-service/index';
+import { verifyToken } from '../auth-service';
   // OU recopie le code verifyToken dans ce fichier.
   // (Ici, on simule qu'on a un export depuis AuthService.)
 require('dotenv').config();
