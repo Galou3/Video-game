@@ -108,4 +108,31 @@ router.post('/refresh-token',
         }
     });
 
+// @route   POST /verify-token
+// @desc    Verify token
+// @access  Public
+router.post('/verify-token',
+    async ( req: Request, res: Response ) : Promise<any> => {
+        try
+        {
+            const headerToken = req.headers.authorization;
+            if (!headerToken)
+            {
+                return res.status(401).json({ errors: [{ msg: 'No token, authorization denied' }] });
+            }
+            const accessToken = headerToken.split(' ')[1];
+            if (!accessToken)
+            {
+                return res.status(401).json({ errors: [{ msg: 'No token, authorization denied' }] });
+            }
+            const payload = jwt.verify(accessToken, JWT_SECRET);
+            return res.status(200).json(payload);
+        }
+        catch (error: any)
+        {
+            console.error(error.message);
+            return res.status(500).json({ errors: [{ msg: 'Server Error' }] });
+        }
+    });
+
 export { router as authRouter };
