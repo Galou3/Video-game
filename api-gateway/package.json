@@ -1,11 +1,27 @@
 {
+  "name": "api-gateway",
+  "version": "1.0.0",
+  "main": "src/index.ts",
   "dependencies": {
     "amqplib": "^0.10.5",
-    "axios": "^1.7.9",
-    "dotenv": "^16.4.7",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "express-validator": "^7.2.1",
     "http-proxy-middleware": "^3.0.3",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-merge": "^0.4.0",
-    "swagger-ui-express": "^5.0.1"
+    "jsonwebtoken": "^9.0.2",
+    "nodemon": "^3.1.9",
+    "ts-node": "^10.9.2"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "nodemon"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.8",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.8"
   }
 }

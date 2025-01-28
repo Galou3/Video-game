@@ -1,9 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 const router = express.Router();
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { hashPassword, comparePassword, generateTokens, refreshAccessToken } from "../utils/utils";
-import { authenticateWithAccessToken, validateRequest } from '../middlewares/middleware';
+import { hashPassword, comparePassword, generateTokens, refreshAccessToken } from "../utils/util";
+import { validateRequest } from '../middlewares/middleware';
 import { User } from '../models/user';
 import { loginValidation } from "../validations/authenticationValidations";
 import { userRegistrationValidation } from "../validations/userValidations";
@@ -100,33 +98,6 @@ router.post('/refresh-token',
                 accessToken: newTokens.newAccessToken,
                 accessTokenExpiresAt: newTokens.newAccessTokenExpiresAt,
             });
-        }
-        catch (error: any)
-        {
-            console.error(error.message);
-            return res.status(500).json({ errors: [{ msg: 'Server Error' }] });
-        }
-    });
-
-// @route   POST /verify-token
-// @desc    Verify token
-// @access  Public
-router.post('/verify-token',
-    async ( req: Request, res: Response ) : Promise<any> => {
-        try
-        {
-            const headerToken = req.headers.authorization;
-            if (!headerToken)
-            {
-                return res.status(401).json({ errors: [{ msg: 'No token, authorization denied' }] });
-            }
-            const accessToken = headerToken.split(' ')[1];
-            if (!accessToken)
-            {
-                return res.status(401).json({ errors: [{ msg: 'No token, authorization denied' }] });
-            }
-            const payload = jwt.verify(accessToken, JWT_SECRET);
-            return res.status(200).json(payload);
         }
         catch (error: any)
         {

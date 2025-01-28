@@ -29,15 +29,6 @@ export const comparePassword = async (password: string, hash: string) => {
     }
 }
 
-export const checkAccessToken = (accessToken: string): JwtPayload => {
-    try {
-        return jwt.verify ( accessToken, PUB_KEY ) as JwtPayload;
-    } catch ( error : any ) {
-        console.log ( error.message );
-        return Promise.reject ( error );
-    }
-};
-
 export const generateTokens = async (user: IUser): Promise<{ accessToken: string, accessTokenExpiresAt: Date, refreshToken: string, refreshTokenExpiresAt: Date }> => {
     try
     {
