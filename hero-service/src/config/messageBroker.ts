@@ -1,7 +1,10 @@
 import amqp from 'amqplib';
 import { Hero } from '../models/hero';
 
-const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost';
+const RABBITMQ_USER = process.env.RABBITMQ_USER || 'root';
+const RABBITMQ_PASSWORD = process.env.RABBITMQ_PASSWORD || 'root';
+const RABBITMQ_PORT = process.env.RABBITMQ_PORT || '5672';
+const RABBITMQ_URL = `amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@localhost:${RABBITMQ_PORT}`;
 const COMBAT_QUEUE = 'combat-service';
 const DUNGEON_QUEUE = 'dungeon-service';
 
