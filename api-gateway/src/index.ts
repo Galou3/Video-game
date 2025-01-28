@@ -41,10 +41,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   validateToken(req, res, next);
 });
 
-app.use('/auth', createProxyMiddleware({ target: services.auth, changeOrigin: true }));
-app.use('/heroes', createProxyMiddleware({ target: services.heroes, changeOrigin: true }));
-app.use('/dungeons', createProxyMiddleware({ target: services.dungeons, changeOrigin: true }));
-app.use('/combats', createProxyMiddleware({ target: services.combats, changeOrigin: true }));
+app.use('/auth-gateway', createProxyMiddleware({ target: services.auth, changeOrigin: true }));
+app.use('/heroes-gateway', createProxyMiddleware({ target: services.heroes, changeOrigin: true }));
+app.use('/dungeons-gateway', createProxyMiddleware({ target: services.dungeons, changeOrigin: true }));
+app.use('/combats-gateway', createProxyMiddleware({ target: services.combats, changeOrigin: true }));
 
 const API_VERSION: string = process.env.API_VERSION || 'v1';
 
