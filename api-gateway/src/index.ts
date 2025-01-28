@@ -28,10 +28,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 const services = {
-  auth: 'http://auth-service:3001',
-  heroes: 'http://hero-service:3002',
-  dungeons: 'http://dungeon-service:3003',
-  combats: 'http://combat-service:3004',
+  auth: 'http://localhost:3001',
+  heroes: 'http://localhost:3002',
+  dungeons: 'http://localhost:3003',
+  combats: 'http://localhost:3004',
 };
 
 app.use((req: Request, res: Response, next: NextFunction) => {
