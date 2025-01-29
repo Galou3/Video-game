@@ -7,32 +7,30 @@ import { loginValidation } from "../validations/authenticationValidations";
 import { userRegistrationValidation } from "../validations/userValidations";
 import { UserRefreshToken } from "../models/userRefreshToken";
 
-const JWT_SECRET = process.env.JWT_SECRET_KEY || 'myJwtSecret';
-
 // @route   POST /register
 // @desc    Register user
 // @access  Public
 router.post('/register',
     [
         ...userRegistrationValidation
-    ],
+    ], validateRequest,
     async (req : Request, res : Response) : Promise<any> => {
-    const { username, password } = req.body;
-    try {
-        const existingUser = await User.findOne({ username });
-        if (existingUser) {
-            return res.status(409).json({ error: 'Cet utilisateur existe déjà.' });
+        try {
+            const { username, password } = req.body;
+            const existingUser = await User.findOne({ username });
+            if (existingUser) {
+                return res.status(409).json({ error: 'Cet utilisateur existe déjà.' });
+            }
+
+            const hash = await hashPassword(password);
+            const newUser = new User({ username, hash });
+            await newUser.save();
+
+            return res.status(201).json({ message: 'Utilisateur créé avec succès.' });
+        } catch (error) {
+            console.error('Erreur /register:', error);
+            return res.status(500).json({ error: 'Erreur lors de la création du compte.' });
         }
-
-        const hash = await hashPassword(password);
-        const newUser = new User({ username, hash });
-        await newUser.save();
-
-        return res.status(201).json({ message: 'Utilisateur créé avec succès.' });
-    } catch (err) {
-        console.error('Erreur /register:', err);
-        return res.status(500).json({ error: 'Erreur lors de la création du compte.' });
-    }
 });
 
 // @route   POST /login
@@ -45,8 +43,8 @@ router.post('/login',
     async ( req: Request, res: Response ) : Promise<any> => {
         try
         {
-            const { email, password } = req.body;
-            const user = await User.findOne({ email });
+            const { username, password } = req.body;
+            const user = await User.findOne({ username });
             if (!user)
             {
                 return res.status(400).json({errors: [{ msg: 'Invalid Credentials' }]});
@@ -66,15 +64,15 @@ router.post('/login',
         }
         catch (error: any)
         {
-            console.log(error.message);
+            console.log('Erreur /login', error);
             return res.status(500).json({errors: [{ msg: 'Server Error' }]});
         }
     });
 
-// @route   POST api/auth/refresh-token
+// @route   POST /refresh-token
 // @desc    Refresh token
 // @access  Public
-router.post('/refresh-token',
+router.post('/refresh-token', validateRequest,
     async ( req: Request, res: Response ) : Promise<any> => {
         try
         {
@@ -101,7 +99,7 @@ router.post('/refresh-token',
         }
         catch (error: any)
         {
-            console.error(error.message);
+            console.error('Erreur /refresh-token', error);
             return res.status(500).json({ errors: [{ msg: 'Server Error' }] });
         }
     });

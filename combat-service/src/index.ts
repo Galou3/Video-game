@@ -29,7 +29,7 @@ const API_VERSION: string = process.env.API_VERSION || 'v1';
 
 app.use ( `/api/${API_VERSION}/combat`, combatRouter );
 
-const PORT : number = parseInt ( process.env.EXPRESS_PORT || '3003' );
+const PORT : number = parseInt ( process.env.EXPRESS_PORT || '3004' );
 
 app.listen ( PORT, () => {
   console.log(`[CombatService] Démarré sur le port ${PORT}`);

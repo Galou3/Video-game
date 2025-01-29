@@ -5,10 +5,10 @@ import amqp from 'amqplib';
 import {DungeonSchema} from "./types/DungeonSchema";
 require('dotenv').config();
 
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3003;
 const app = express();
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27002/dungeondb';
-const RABBITMQ_URI = process.env.RABBITMQ_URI || 'amqp://localhost:5672';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/dungeons';
+const RABBITMQ_URI = process.env.RABBITMQ_URI || 'amqp://root:root@localhost:5672';
 
 app.use(express.json());
 

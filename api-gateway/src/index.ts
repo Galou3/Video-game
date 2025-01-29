@@ -12,12 +12,7 @@ app.use(express.json());
 
 app.disable('x-powered-by');
 
-app.use(cors({
-  origin: 'http://localhost:3005',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'x-auth-token'],
-}));
+app.use(cors());
 
 app.set('trust proxy', 1);
 
@@ -35,10 +30,11 @@ const services = {
 };
 
 app.use((req: Request, res: Response, next: NextFunction) => {
-  if (req.path.startsWith('/auth')) {
-    return next();
+  if (req.path.startsWith('/auth-gateway')) {
+    next();
+  } else {
+    validateToken(req, res, next);
   }
-  validateToken(req, res, next);
 });
 
 app.use('/auth-gateway', createProxyMiddleware({ target: services.auth, changeOrigin: true }));
