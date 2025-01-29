@@ -113,7 +113,7 @@ app.post('/dungeons/move', async (req: Request, res: Response) => {
 			}
 
 			const event = {
-				type: 'COMBAT_START',
+				type: 'combat.start',
 				userId: run.userId,
 				heroId: run.heroId,
 				monster: cellContent,

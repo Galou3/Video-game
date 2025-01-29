@@ -8,52 +8,85 @@ const RABBITMQ_URL = `amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@localhost:${R
 const COMBAT_QUEUE = 'combat-service';
 const DUNGEON_QUEUE = 'dungeon-service';
 
-const processMessage = async (queue: string, message: any) : Promise<any> => {
+const processCombatMessage = async (queue: string, message: any) : Promise<any> => {
     try {
-        const parsedMessage = JSON.parse(message.content.toString());
-        const { heroId, updateType, value } = parsedMessage;
+        const content = message.content.toString();
+        const combatEvent = JSON.parse(content);
 
-        const hero = await Hero.findById(heroId);
-        if (!hero) {
-            console.error(`Hero with ID ${heroId} not found.`);
-            return;
+        console.log(`Received combat event: ${combatEvent.type}`);
+
+        if (combatEvent.type === 'combat.end') {
+            const hero = await Hero.findById ( combatEvent.heroId );
+            if ( hero )
+            {
+                const heroHp = hero.hp - combatEvent.hp;
+                if ( heroHp <= 0 )
+                {
+                    hero.hp = 0;
+                    await hero.save ();
+                    console.log ( `Hero ${ hero.name } has died.` );
+                    return;
+                }
+                hero.hp = heroHp;
+                await hero.save ();
+                console.log ( `Hero ${ hero.name } has ${ hero.hp } HP left.` );
+            }
         }
-
-        if (updateType === 'gold') {
-            hero.gold = (hero.gold || 0) + value;
-        } else if (updateType === 'hp') {
-            hero.hp = (hero.hp || 0) + value;
-        } else {
-            console.error(`Unknown update type: ${updateType}`);
-            return;
-        }
-
-        await hero.save();
-        console.log(`Hero ${heroId} updated successfully in response to ${queue} message.`);
     } catch (err: any) {
         console.error('Error processing message:', err.message);
     }
 };
 
+const processDungeonMessage = async (queue: string, message: any) : Promise<any> => {
+    try {
+        const content = message.content.toString();
+        const dungeonEvent = JSON.parse(content);
+
+        console.log(`Received dungeon event: ${dungeonEvent.type}`);
+
+        if (dungeonEvent.type === 'dungeon.loot') {
+            const hero = await Hero.findById(dungeonEvent.heroId);
+            if (hero) {
+                hero.gold += dungeonEvent.gold;
+                await hero.save();
+                console.log(`Hero ${hero.name} found ${dungeonEvent.gold} gold.`);
+            }
+        }
+    } catch (err: any) {
+        console.error('Error processing message:', err.message);
+    }
+}
+
 export const connectToRabbitMQ = async () : Promise<any> => {
     try {
         const connection = await amqp.connect(RABBITMQ_URL);
-        const channel = await connection.createChannel();
+        const combatChannel = await connection.createChannel();
 
-        await channel.assertQueue(COMBAT_QUEUE, { durable: true });
-        await channel.assertQueue(DUNGEON_QUEUE, { durable: true });
+        const combatQueue = await combatChannel.assertQueue('', { durable: false });
 
-        channel.consume(COMBAT_QUEUE, (msg) => {
+        combatChannel.assertExchange('events', 'topic', { durable: false });
+
+        combatChannel.bindQueue(COMBAT_QUEUE, 'events', 'combat.*');
+
+        combatChannel.consume(combatQueue.queue, (msg) => {
             if (msg) {
-                processMessage(COMBAT_QUEUE, msg);
-                channel.ack(msg);
+                processCombatMessage(COMBAT_QUEUE, msg);
+                combatChannel.ack(msg);
             }
         });
 
-        channel.consume(DUNGEON_QUEUE, (msg) => {
+        const dungeonChannel = await connection.createChannel();
+
+        const dungeonQueue = await dungeonChannel.assertQueue('', { durable: false });
+
+        dungeonChannel.assertExchange('events', 'topic', { durable: false });
+
+        dungeonChannel.bindQueue(DUNGEON_QUEUE, 'events', 'dungeon.loot');
+
+        dungeonChannel.consume(dungeonQueue.queue, (msg) => {
             if (msg) {
-                processMessage(DUNGEON_QUEUE, msg);
-                channel.ack(msg);
+                processDungeonMessage(DUNGEON_QUEUE, msg);
+                dungeonChannel.ack(msg);
             }
         });
 
