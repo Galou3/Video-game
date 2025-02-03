@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 const router = express.Router();
 import { Hero } from '../models/hero';
 import { validateRequest } from "../middlewares/middleware";
-import { getHeroesValidation } from "../validations/heroesValidation";
+import { createHeroValidation, getHeroesValidation, getHeroValidation } from "../validations/heroesValidation";
 
 // @route   GET /get-heroes
 // @desc    Get all heroes
@@ -13,7 +13,7 @@ router.get('/get-heroes',
     ], validateRequest,
     async (req: Request, res: Response, next: NextFunction) : Promise<any> => {
     try {
-        const userId = req.body.userId;
+        const userId = req.headers['x-user-id'];
         const heroes = await Hero.find({userId});
         return res.status(200).json(heroes);
     } catch (error: any) {
@@ -27,12 +27,13 @@ router.get('/get-heroes',
 // @access  Private
 router.post('/create-hero',
     [
-        ...getHeroesValidation
+        ...createHeroValidation
     ], validateRequest,
     async (req: Request, res: Response, next: NextFunction) : Promise<any> => {
     try {
         const { name, power } = req.body;
-        const hero = new Hero({ name, power });
+        const userId = req.headers['x-user-id'];
+        const hero = new Hero({ userId, name, power });
         await hero.save();
         return res.status(201).json({ message: 'Héro créé avec succès.' });
     } catch (error: any) {
@@ -46,11 +47,12 @@ router.post('/create-hero',
 // @access  Private
 router.get('/get-hero/:id',
     [
-        ...getHeroesValidation
+        ...getHeroesValidation,
+        ...getHeroValidation
     ], validateRequest,
     async (req: Request, res: Response, next: NextFunction) : Promise<any> => {
     try {
-        const userId = req.body.userId;
+        const userId = req.headers['x-user-id'];
         const hero = await Hero.findOne({ _id: req.params.id, userId });
         return res.status(200).json(hero);
     } catch (error: any) {

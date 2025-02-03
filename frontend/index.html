@@ -29,7 +29,7 @@
     <div class="bg-white rounded shadow p-6" id="authPanel">
       <h2 class="text-xl font-semibold mb-4 text-blue-600">Authentification</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        
+
         <!-- Register Form -->
         <div class="p-4 border-r border-gray-200">
           <div>
@@ -123,7 +123,7 @@
           </button>
           <ul id="heroList" class="space-y-2"></ul>
         </div>
-        
+
         <!-- Create Hero Form -->
         <div class="md:w-1/2">
           <h3 class="text-lg font-semibold mb-2">Créer un nouveau héros</h3>
@@ -199,9 +199,9 @@
     let currentRunId = null; // ID du DungeonRun si on est dans un donjon
 
     // Les URLs de nos microservices (à adapter selon config)
-    const AUTH_SERVICE_URL = 'http://localhost:3001/api/v1';
-    const HERO_SERVICE_URL = 'http://localhost:3002/api/v1';
-    const DUNGEON_SERVICE_URL = 'http://localhost:3004';
+    const AUTH_SERVICE_URL = 'http://localhost:3000/auth-gateway/api/v1/auth';
+    const HERO_SERVICE_URL = 'http://localhost:3000/heroes-gateway/api/v1/heroes';
+    const DUNGEON_SERVICE_URL = 'http://localhost:3004/dungeons-gateway/api/v1/dungeons';
 
     // DOM elements
     const messageArea = document.getElementById('messageArea');
@@ -223,7 +223,7 @@ registerForm.addEventListener('submit', async (e) => {
   const password = document.getElementById('registerPassword').value;
   const confirmPassword = document.getElementById('registerConfirmPassword').value;
   try {
-    const resp = await fetch(`${AUTH_SERVICE_URL}/auth/register`, {
+    const resp = await fetch(`${AUTH_SERVICE_URL}/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password, "confirm-password": confirmPassword })
@@ -252,7 +252,7 @@ loginForm.addEventListener('submit', async (e) => {
   const username = document.getElementById('loginUsername').value.trim();
   const password = document.getElementById('loginPassword').value;
   try {
-    const resp = await fetch(`${AUTH_SERVICE_URL}/auth/login`, {
+    const resp = await fetch(`${AUTH_SERVICE_URL}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
@@ -283,11 +283,11 @@ loginForm.addEventListener('submit', async (e) => {
   heroList.innerHTML = 'Chargement...';
   const userId = "633f1e2a3b8f9c1234567890"; // userId en dur pour test
   try {
-    const resp = await fetch(`${HERO_SERVICE_URL}/heroes/get-heroes?userId=${userId}`, {
+    const resp = await fetch(`${HERO_SERVICE_URL}/get-heroes`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'x-auth-token': token
+        'Authorization': `Bearer ${token}`
       },
     });
     if (!resp.ok) {
@@ -331,16 +331,16 @@ createHeroForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const heroName = document.getElementById('heroName').value.trim();
 
-  const userId = "633f1e2a3b8f9c1234567890"; 
+  const userId = "633f1e2a3b8f9c1234567890";
 
   try {
-    const resp = await fetch(`${HERO_SERVICE_URL}/heroes/create-hero`, {
+    const resp = await fetch(`${HERO_SERVICE_URL}/create-hero`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-auth-token': token
+        'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ userId: userId, name: heroName })
+      body: JSON.stringify({ name: heroName })
     });
     const data = await resp.json();
     if (!resp.ok) {
@@ -481,7 +481,7 @@ createHeroForm.addEventListener('submit', async (e) => {
         isError ? 'text-red-600' : 'text-green-600'
       } font-semibold my-4 text-center">${msg}</div>`;
     }
-    
+
   </script>
 </body>
 </html>

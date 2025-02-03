@@ -1,9 +1,17 @@
-import { body } from 'express-validator';
+import { body, header } from 'express-validator';
 
 export const getHeroesValidation = [
-    body('userId')
+    header('x-user-id')
         .exists().withMessage('User ID is required')
         .isMongoId().withMessage('User ID must be a valid MongoDB ID')
+];
+
+export const getHeroValidation = [
+    ...getHeroesValidation,
+
+    body('heroId')
+        .exists().withMessage('Hero ID is required')
+        .isMongoId().withMessage('Hero ID must be a valid MongoDB ID')
 ];
 
 export const createHeroValidation = [
