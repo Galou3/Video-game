@@ -4,13 +4,19 @@ import { DungeonRun } from "../models/dungeonRun";
 import { enterDungeonValidation, moveDungeonValidation } from "../validations/dungeonValidation";
 import { validateRequest } from "../middlewares/middleware";
 import { channel } from "../config/messageBroker";
+import { generateRandomDungeon } from "../utils/utils";
 
 const router = express.Router();
 
 router.get('/dungeons', async (req: Request, res: Response) => {
     try {
         const dungeons = await Dungeon.find({});
-        res.json({ message : 'Liste des donjons', dungeons });
+        if (dungeons.length === 0) {
+            const randomDungeon = generateRandomDungeon('Random Dungeon', 5, 5);
+            await randomDungeon.save();
+            return res.json(randomDungeon);
+        }
+        res.json(dungeons);
     } catch (err) {
         console.error('/dungeons GET error:', err);
         res.status(500).json({ error: 'Erreur récupération donjons.' });
