@@ -17,7 +17,6 @@ app.use(cors());
 app.set('trust proxy', 1);
 
 app.use((req: Request, res: Response, next: NextFunction) => {
-  console.log(res);
   res.header('X-Content-Type-Options', 'nosniff');
   res.header('X-Frame-Options', 'DENY');
   res.header('Content-Security-Policy', "default-src 'self'");

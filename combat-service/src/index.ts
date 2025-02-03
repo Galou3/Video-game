@@ -47,7 +47,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 // API routes
 const API_VERSION: string = process.env.API_VERSION || 'v1';
-app.use(`/api/${API_VERSION}/combat`, combatRouter);
+app.use(`/api/${API_VERSION}/combats`, combatRouter);
 
 // Error handling
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

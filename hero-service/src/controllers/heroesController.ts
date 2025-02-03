@@ -2,14 +2,18 @@ import express, { Request, Response, NextFunction } from 'express';
 const router = express.Router();
 import { Hero } from '../models/hero';
 import { validateRequest } from "../middlewares/middleware";
-import { createHeroValidation, getHeroesValidation, getHeroValidation } from "../validations/heroesValidation";
+import {
+    createHeroValidation,
+    getUserValidation,
+    getHeroValidation,
+} from "../validations/heroesValidation";
 
 // @route   GET /get-heroes
 // @desc    Get all heroes
 // @access  Private
 router.get('/get-heroes',
     [
-        ...getHeroesValidation
+        ...getUserValidation
     ], validateRequest,
     async (req: Request, res: Response, next: NextFunction) : Promise<any> => {
     try {
@@ -47,7 +51,7 @@ router.post('/create-hero',
 // @access  Private
 router.get('/get-hero/:id',
     [
-        ...getHeroesValidation,
+        ...getUserValidation,
         ...getHeroValidation
     ], validateRequest,
     async (req: Request, res: Response, next: NextFunction) : Promise<any> => {

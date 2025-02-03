@@ -201,7 +201,7 @@
     // Les URLs de nos microservices (à adapter selon config)
     const AUTH_SERVICE_URL = 'http://localhost:3000/auth-gateway/api/v1/auth';
     const HERO_SERVICE_URL = 'http://localhost:3000/heroes-gateway/api/v1/heroes';
-    const DUNGEON_SERVICE_URL = 'http://localhost:3004/dungeons-gateway/api/v1/dungeons';
+    const DUNGEON_SERVICE_URL = 'http://localhost:3000/dungeons-gateway/api/v1/dungeons';
 
     // DOM elements
     const messageArea = document.getElementById('messageArea');
@@ -370,7 +370,7 @@ createHeroForm.addEventListener('submit', async (e) => {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'x-auth-token': token
+            'Authorization': `Bearer ${token}`
           }
         });
         if (!resp.ok) {
@@ -414,7 +414,7 @@ createHeroForm.addEventListener('submit', async (e) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-auth-token': token
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
             heroId: selectedHeroId,
@@ -449,7 +449,7 @@ createHeroForm.addEventListener('submit', async (e) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-auth-token': token
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({ runId: currentRunId })
         });
