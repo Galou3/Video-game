@@ -150,36 +150,40 @@
     </div>
 
     <!-- 3) Dungeon Panel -->
-    <div class="bg-white rounded shadow p-6 hidden" id="dungeonPanel">
-      <h2 class="text-xl font-semibold mb-4 text-blue-600">Donjons</h2>
-      <div>
-        <h3 class="text-lg font-semibold mb-2">Liste des donjons disponibles</h3>
-        <button
-          id="btnReloadDungeons"
-          class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4"
-        >
-          Recharger Donjons
-        </button>
-        <select id="dungeonSelect" class="border-gray-300 rounded p-2 mr-2">
-          <!-- On va y injecter la liste des donjons -->
-        </select>
-        <button
-          id="btnEnterDungeon"
-          class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-        >
-          Entrer
-        </button>
-      </div>
-      <div id="dungeonRunInfo" class="mt-4 hidden">
-        <p class="text-gray-700" id="dungeonRunText"></p>
-        <button
-          id="btnMove"
-          class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 mt-2"
-        >
-          Avancer
-        </button>
-      </div>
-    </div>
+
+<div class="bg-white rounded shadow p-6 hidden" id="dungeonPanel">
+  <h2 class="text-xl font-semibold mb-4 text-blue-600">Donjons</h2>
+  <div>
+    <h3 class="text-lg font-semibold mb-2">Liste des donjons disponibles</h3>
+    <button
+      id="btnReloadDungeons"
+      class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4"
+    >
+      Recharger Donjons
+    </button>
+    <select id="dungeonSelect" class="border-gray-300 rounded p-2 mr-2">
+      <!-- La liste des donjons sera injectée ici -->
+    </select>
+    <button
+      id="btnEnterDungeon"
+      class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+    >
+      Entrer
+    </button>
+  </div>
+  <div id="dungeonRunInfo" class="mt-4 hidden">
+    <p class="text-gray-700" id="dungeonRunText"></p>
+    <button
+      id="btnMove"
+      class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 mt-2"
+    >
+      Avancer
+    </button>
+  </div>
+  <!-- Nouveau conteneur pour afficher la carte du donjon -->
+  <div id="dungeonMap" class="mt-4"></div>
+</div>
+
   </main>
 
   <!-- Footer -->
@@ -363,115 +367,217 @@ createHeroForm.addEventListener('submit', async (e) => {
     btnReloadDungeons.addEventListener('click', loadDungeons);
 
     async function loadDungeons() {
-      // Vide le select
-      dungeonSelect.innerHTML = '<option value="">Chargement...</option>';
-      try {
-        const resp = await fetch(`${DUNGEON_SERVICE_URL}/dungeons`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (!resp.ok) {
-          const errData = await resp.json();
-          showMessage(`Erreur chargement donjons: ${errData.error}`, true);
-          dungeonSelect.innerHTML = '';
-          return;
-        }
-        const dungeons = await resp.json();
-        dungeonSelect.innerHTML = '';
-        if (!dungeons.length) {
-          dungeonSelect.innerHTML = '<option>Aucun donjon disponible</option>';
-          return;
-        }
-        dungeons.forEach(d => {
-          const opt = document.createElement('option');
-          opt.value = d._id;
-          opt.textContent = d.name;
-          dungeonSelect.appendChild(opt);
-        });
-      } catch (error) {
-        showMessage('Erreur réseau lors du chargement des donjons.', true);
-        console.error(error);
+  dungeonSelect.innerHTML = '<option value="">Chargement...</option>';
+  try {
+    const resp = await fetch(`${DUNGEON_SERVICE_URL}/dungeons`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       }
+    });
+    if (!resp.ok) {
+      const errData = await resp.json();
+      showMessage(`Erreur chargement donjons: ${errData.error}`, true);
+      dungeonSelect.innerHTML = '';
+      return;
     }
+    const dungeons = await resp.json();
+    dungeonData = dungeons; // Stockage global
+    dungeonSelect.innerHTML = '';
+    if (!dungeons.length) {
+      dungeonSelect.innerHTML = '<option>Aucun donjon disponible</option>';
+      return;
+    }
+    dungeons.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d._id;
+      opt.textContent = d.name;
+      dungeonSelect.appendChild(opt);
+    });
+  } catch (error) {
+    showMessage('Erreur réseau lors du chargement des donjons.', true);
+    console.error(error);
+  }
+}
 
     // Entrer dans un donjon
     const btnEnterDungeon = document.getElementById('btnEnterDungeon');
     btnEnterDungeon.addEventListener('click', async () => {
-      if (!selectedHeroId) {
-        showMessage('Sélectionne d’abord un héros.', true);
-        return;
-      }
-      const dungeonId = dungeonSelect.value;
-      if (!dungeonId) {
-        showMessage('Sélectionne un donjon.', true);
-        return;
-      }
-      try {
-        const resp = await fetch(`${DUNGEON_SERVICE_URL}/dungeons/enter`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            heroId: selectedHeroId,
-            dungeonId: dungeonId
-          })
-        });
-        const data = await resp.json();
-        if (!resp.ok) {
-          showMessage(`Erreur entrée donjon: ${data.error || resp.statusText}`, true);
-          return;
-        }
-        currentRunId = data._id; // l’ID du DungeonRun
-        showMessage(`DungeonRun créé pour le donjon: ${dungeonId}`, false);
-        // On montre le panel move
-        dungeonRunInfo.classList.remove('hidden');
-        dungeonRunText.textContent = 'Tu viens d’entrer dans le donjon. Position = 0';
-      } catch (error) {
-        showMessage('Erreur réseau lors de l’entrée dans le donjon.', true);
-        console.error(error);
-      }
+  if (!selectedHeroId) {
+    showMessage('Sélectionne d’abord un héros.', true);
+    return;
+  }
+  const dungeonId = dungeonSelect.value;
+  if (!dungeonId) {
+    showMessage('Sélectionne un donjon.', true);
+    return;
+  }
+  try {
+    const resp = await fetch(`${DUNGEON_SERVICE_URL}/dungeons/enter`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        heroId: selectedHeroId,
+        dungeonId: dungeonId
+      })
     });
+    const data = await resp.json();
+    if (!resp.ok) {
+      showMessage(`Erreur entrée donjon: ${data.error || resp.statusText}`, true);
+      return;
+    }
+    currentRunId = data._id; // l’ID du DungeonRun
+    showMessage(`DungeonRun créé pour le donjon: ${dungeonId}`, false);
+    dungeonRunInfo.classList.remove('hidden');
+    dungeonRunText.textContent = 'Tu viens d’entrer dans le donjon. Position = 0';
+    
+    // Retrouver l’objet dungeon dans dungeonData
+    currentDungeon = dungeonData.find(d => d._id === dungeonId);
+    // Afficher la carte du donjon
+    renderDungeonMap(currentDungeon, data);
+  } catch (error) {
+    showMessage('Erreur réseau lors de l’entrée dans le donjon.', true);
+    console.error(error);
+  }
+});
+
+function renderDungeonMap(dungeon, run) {
+  const dungeonMap = document.getElementById('dungeonMap');
+  dungeonMap.innerHTML = ''; // Effacer l'ancienne carte
+  if (!dungeon || !dungeon.layout) return;
+  
+  const numRows = dungeon.layout.length;
+  const numCols = dungeon.layout[0].length;
+  
+  // Configuration du conteneur en grille
+  dungeonMap.style.display = 'grid';
+  dungeonMap.style.gridTemplateColumns = `repeat(${numCols}, 50px)`;
+  dungeonMap.style.gap = '2px';
+  
+  for (let i = 0; i < numRows; i++) {
+    for (let j = 0; j < numCols; j++) {
+      const cellType = dungeon.layout[i][j];
+      const cellDiv = document.createElement('div');
+      cellDiv.classList.add('flex', 'items-center', 'justify-center', 'border', 'text-sm', 'font-bold');
+      cellDiv.style.width = '50px';
+      cellDiv.style.height = '50px';
+      
+      // Couleur de fond en fonction du type de cellule
+      if (cellType === 'FLOOR') {
+        cellDiv.classList.add('bg-gray-200');
+      } else if (cellType === 'ENNEMY') {
+        cellDiv.classList.add('bg-red-300');
+      } else if (cellType === 'BOSS') {
+        cellDiv.classList.add('bg-red-600', 'text-white');
+      }
+      
+      // Marquer la position du héros
+      if (run && run.lastPos && run.lastPos.x === i && run.lastPos.y === j) {
+        cellDiv.textContent = '🙂'; // Marqueur du héros
+        cellDiv.classList.add('border-4', 'border-green-500');
+      } else {
+        cellDiv.textContent = cellType.charAt(0); // Première lettre du type
+      }
+      
+      // Ajout d'un écouteur de clic sur la cellule
+      cellDiv.addEventListener('click', () => {
+        // Par exemple, vous pouvez calculer le déplacement nécessaire pour aller sur cette case
+        // et appeler une fonction moveTo(i, j) qui s'occupera d'envoyer la requête.
+        moveTo(i, j, run);
+      });
+      
+      dungeonMap.appendChild(cellDiv);
+    }
+  }
+}
+
+function moveTo(targetX, targetY, run) {
+  if (!run) {
+    showMessage('Aucune run active.', true);
+    return;
+  }
+  
+  const moveX = targetX - run.lastPos.x;
+  const moveY = targetY - run.lastPos.y;
+  
+  if (Math.abs(moveX) > 1 || Math.abs(moveY) > 1) {
+    showMessage('Déplacement trop grand ! Vous ne pouvez bouger qu\'une case à la fois.', true);
+    return;
+  }
+  
+  // Appeler l'API move avec ces valeurs
+  fetch(`${DUNGEON_SERVICE_URL}/dungeons/move`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ runId: currentRunId, moveX, moveY })
+  })
+    .then(resp => resp.json().then(data => ({ ok: resp.ok, data })))
+    .then(({ ok, data }) => {
+      if (!ok) {
+        showMessage(`Erreur déplacement: ${data.error || ''}`, true);
+        return;
+      }
+      showMessage(data.message, false);
+      dungeonRunText.textContent = `Position actuelle : x=${data.run.lastPos.x}, y=${data.run.lastPos.y}`;
+      if (currentDungeon) {
+        renderDungeonMap(currentDungeon, data.run);
+      }
+      if (data.run.finished) {
+        currentRunId = null;
+        showMessage('Donjon terminé !', false);
+      }
+      run.lastPos = data.run.lastPos;
+    })
+    .catch(error => {
+      showMessage('Erreur réseau lors du déplacement.', true);
+      console.error(error);
+    });
+}
 
     // Se déplacer dans le donjon
     const btnMove = document.getElementById('btnMove');
     btnMove.addEventListener('click', async () => {
-      if (!currentRunId) {
-        showMessage('Aucune run active.', true);
-        return;
-      }
-      try {
-        const resp = await fetch(`${DUNGEON_SERVICE_URL}/dungeons/move`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ runId: currentRunId })
-        });
-        const data = await resp.json();
-        if (!resp.ok) {
-          showMessage(`Erreur déplacement: ${data.error || resp.statusText}`, true);
-          return;
-        }
-        // On affiche le résultat
-        showMessage(data.message, false);
-        dungeonRunText.textContent = JSON.stringify(data.run, null, 2);
-
-        // Si le donjon est terminé, on reset la run
-        if (data.run && data.run.finished) {
-          currentRunId = null;
-          showMessage('Donjon terminé !', false);
-        }
-      } catch (error) {
-        showMessage('Erreur réseau lors du déplacement.', true);
-        console.error(error);
-      }
+  if (!currentRunId) {
+    showMessage('Aucune run active.', true);
+    return;
+  }
+  try {
+    // Ici, vous pouvez modifier moveX et moveY selon votre logique (exemple: avancer vers la droite)
+    const resp = await fetch(`${DUNGEON_SERVICE_URL}/move`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ runId: currentRunId, moveX: 1, moveY: 0 })
     });
+    const data = await resp.json();
+    if (!resp.ok) {
+      showMessage(`Erreur déplacement: ${data.error || resp.statusText}`, true);
+      return;
+    }
+    showMessage(data.message, false);
+    dungeonRunText.textContent = `Position actuelle : x=${data.run.lastPos.x}, y=${data.run.lastPos.y}`;
+    if (currentDungeon) {
+      renderDungeonMap(currentDungeon, data.run);
+    }
+    if (data.run && data.run.finished) {
+      currentRunId = null;
+      showMessage('Donjon terminé !', false);
+    }
+  } catch (error) {
+    showMessage('Erreur réseau lors du déplacement.', true);
+    console.error(error);
+  }
+});
+
 
     // --------------------------------------------------------
     // UTILITAIRE D’AFFICHAGE DE MESSAGES
