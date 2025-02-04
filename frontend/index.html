@@ -369,7 +369,7 @@ createHeroForm.addEventListener('submit', async (e) => {
     async function loadDungeons() {
   dungeonSelect.innerHTML = '<option value="">Chargement...</option>';
   try {
-    const resp = await fetch(`${DUNGEON_SERVICE_URL}/dungeons`, {
+    const resp = await fetch(`${DUNGEON_SERVICE_URL}/get-dungeons`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -414,7 +414,7 @@ createHeroForm.addEventListener('submit', async (e) => {
     return;
   }
   try {
-    const resp = await fetch(`${DUNGEON_SERVICE_URL}/dungeons/enter`, {
+    const resp = await fetch(`${DUNGEON_SERVICE_URL}/enter`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -434,7 +434,7 @@ createHeroForm.addEventListener('submit', async (e) => {
     showMessage(`DungeonRun créé pour le donjon: ${dungeonId}`, false);
     dungeonRunInfo.classList.remove('hidden');
     dungeonRunText.textContent = 'Tu viens d’entrer dans le donjon. Position = 0';
-    
+
     // Retrouver l’objet dungeon dans dungeonData
     currentDungeon = dungeonData.find(d => d._id === dungeonId);
     // Afficher la carte du donjon
@@ -449,15 +449,15 @@ function renderDungeonMap(dungeon, run) {
   const dungeonMap = document.getElementById('dungeonMap');
   dungeonMap.innerHTML = ''; // Effacer l'ancienne carte
   if (!dungeon || !dungeon.layout) return;
-  
+
   const numRows = dungeon.layout.length;
   const numCols = dungeon.layout[0].length;
-  
+
   // Configuration du conteneur en grille
   dungeonMap.style.display = 'grid';
   dungeonMap.style.gridTemplateColumns = `repeat(${numCols}, 50px)`;
   dungeonMap.style.gap = '2px';
-  
+
   for (let i = 0; i < numRows; i++) {
     for (let j = 0; j < numCols; j++) {
       const cellType = dungeon.layout[i][j];
@@ -465,7 +465,7 @@ function renderDungeonMap(dungeon, run) {
       cellDiv.classList.add('flex', 'items-center', 'justify-center', 'border', 'text-sm', 'font-bold');
       cellDiv.style.width = '50px';
       cellDiv.style.height = '50px';
-      
+
       // Couleur de fond en fonction du type de cellule
       if (cellType === 'FLOOR') {
         cellDiv.classList.add('bg-gray-200');
@@ -474,7 +474,7 @@ function renderDungeonMap(dungeon, run) {
       } else if (cellType === 'BOSS') {
         cellDiv.classList.add('bg-red-600', 'text-white');
       }
-      
+
       // Marquer la position du héros
       if (run && run.lastPos && run.lastPos.x === i && run.lastPos.y === j) {
         cellDiv.textContent = '🙂'; // Marqueur du héros
@@ -482,14 +482,14 @@ function renderDungeonMap(dungeon, run) {
       } else {
         cellDiv.textContent = cellType.charAt(0); // Première lettre du type
       }
-      
+
       // Ajout d'un écouteur de clic sur la cellule
       cellDiv.addEventListener('click', () => {
         // Par exemple, vous pouvez calculer le déplacement nécessaire pour aller sur cette case
         // et appeler une fonction moveTo(i, j) qui s'occupera d'envoyer la requête.
         moveTo(i, j, run);
       });
-      
+
       dungeonMap.appendChild(cellDiv);
     }
   }
@@ -500,17 +500,17 @@ function moveTo(targetX, targetY, run) {
     showMessage('Aucune run active.', true);
     return;
   }
-  
+
   const moveX = targetX - run.lastPos.x;
   const moveY = targetY - run.lastPos.y;
-  
+
   if (Math.abs(moveX) > 1 || Math.abs(moveY) > 1) {
     showMessage('Déplacement trop grand ! Vous ne pouvez bouger qu\'une case à la fois.', true);
     return;
   }
-  
+
   // Appeler l'API move avec ces valeurs
-  fetch(`${DUNGEON_SERVICE_URL}/dungeons/move`, {
+  fetch(`${DUNGEON_SERVICE_URL}/move`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

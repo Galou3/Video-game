@@ -69,7 +69,7 @@ export const connectToRabbitMQ = async (): Promise<any> => {
         await combatChannel.assertExchange('events', 'topic', { durable: false });
 
         // Bind the combat-service queue to the exchange with the routing key 'combat.*'
-        await combatChannel.bindQueue(COMBAT_QUEUE, 'events', 'combat.*');
+        await combatChannel.bindQueue(COMBAT_QUEUE, 'events', 'combat.end');
 
         // Start consuming messages from the combat-service queue
         combatChannel.consume(COMBAT_QUEUE, (msg) => {
