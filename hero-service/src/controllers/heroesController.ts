@@ -65,4 +65,42 @@ router.get('/get-hero/:id',
     }
 });
 
+router.post('/update-hp', [
+    ...getUserValidation,
+    ...getHeroValidation
+], validateRequest,
+async (req: Request, res: Response, next: NextFunction) : Promise<any> => {
+    try {
+        const userId = req.headers['x-user-id'];
+        const { heroId, hpChange } = req.body;
+
+        // Validation de hpChange
+        if (typeof hpChange !== 'number') {
+            return res.status(400).json({ error: 'hpChange must be a number' });
+        }
+
+        const hero = await Hero.findOne({ _id: heroId, userId });
+        
+        if (!hero) {
+            return res.status(404).json({ error: 'Hero not found' });
+        }
+        hero.hp += hpChange;
+
+        if (hero.hp < 0) {
+            hero.hp = 0;
+        }
+
+        await hero.save();
+
+        return res.status(200).json({ 
+            message: 'HP updated successfully',
+            currentHp: hero.hp
+        });
+
+    } catch (error: any) {
+        console.log(error.message);
+        return res.status(500).json({ error: 'Erreur interne.' });
+    }
+});
+
 export { router as heroesRouter };

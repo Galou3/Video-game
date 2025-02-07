@@ -10,6 +10,28 @@
     .hidden {
       display: none;
     }
+    .health-bar-container {
+      width: 200px;
+      height: 20px;
+      border: 2px solid #333;
+      margin: 10px 0;
+      position: relative;
+    }
+
+    .health-bar {
+      height: 100%;
+      background-color: #4CAF50;
+      transition: width 0.3s ease;
+    }
+
+    .health-text {
+      position: absolute;
+      width: 100%;
+      text-align: center;
+      color: white;
+      font-weight: bold;
+      text-shadow: 1px 1px 2px black;
+    }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
@@ -184,6 +206,12 @@
   <div id="dungeonMap" class="mt-4"></div>
 </div>
 
+<!-- Ajouter cette structure HTML où tu veux afficher la barre de vie -->
+<div class="health-bar-container">
+  <div class="health-bar" id="healthBar" style="width: 100%;"></div>
+  <div class="health-text" id="healthText">100 / 100</div>
+</div>
+
   </main>
 
   <!-- Footer -->
@@ -201,11 +229,14 @@
     let token = null;
     let selectedHeroId = null;
     let currentRunId = null; // ID du DungeonRun si on est dans un donjon
+    let currentHp = 100;
+    const maxHp = 100;
 
     // Les URLs de nos microservices (à adapter selon config)
     const AUTH_SERVICE_URL = 'http://localhost:3000/auth-gateway/api/v1/auth';
     const HERO_SERVICE_URL = 'http://localhost:3000/heroes-gateway/api/v1/heroes';
     const DUNGEON_SERVICE_URL = 'http://localhost:3000/dungeons-gateway/api/v1/dungeons';
+    const COMBAT_SERVICE_URL = 'http://localhost:3000/combats-gateway/api/v1/combats';
 
     // DOM elements
     const messageArea = document.getElementById('messageArea');
@@ -495,6 +526,93 @@ function renderDungeonMap(dungeon, run) {
   }
 }
 
+// Fonction pour mettre à jour la barre de vie
+function updateHealthBar(hpChange) {
+  currentHp += hpChange;
+  
+  // S'assurer que la vie ne dépasse pas le maximum
+  if (currentHp > maxHp) currentHp = maxHp;
+  
+  // S'assurer que la vie ne descend pas en dessous de 0
+  if (currentHp < 0) currentHp = 0;
+
+  // Mettre à jour l'affichage
+  const healthBar = document.getElementById('healthBar');
+  const healthText = document.getElementById('healthText');
+  const healthPercentage = (currentHp / maxHp) * 100;
+
+  healthBar.style.width = `${healthPercentage}%`;
+  healthText.textContent = `${currentHp} / ${maxHp}`;
+
+  // Changer la couleur en fonction de la santé
+  if (healthPercentage > 50) {
+    healthBar.style.backgroundColor = '#4CAF50'; // Vert
+  } else if (healthPercentage > 20) {
+    healthBar.style.backgroundColor = '#FFC107'; // Orange
+  } else {
+    healthBar.style.backgroundColor = '#F44336'; // Rouge
+  }
+}
+
+// Modifier ta fonction de combat pour mettre à jour la barre de vie
+async function handleCombat() {
+  const moves = ['rock', 'paper', 'scissors'];
+  const playerMove = moves[Math.floor(Math.random() * moves.length)];
+  
+  try {
+    const resp = await fetch(`${COMBAT_SERVICE_URL}/attack`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        runId: currentRunId,
+        playerMove: playerMove
+      })
+    });
+    
+    const data = await resp.json();
+    if (!resp.ok) {
+      showMessage(`Erreur combat: ${data.error}`, true);
+      return;
+    }
+    
+    showMessage(`${data.message} (Ton coup: ${playerMove}, Ennemi: ${data.enemyMove})`, false);
+    
+    if (data.hpLost !== 0) {
+      // Mettre à jour la barre de vie visuellement
+      updateHealthBar(data.hpLost);
+
+      // Envoyer la mise à jour au backend
+      const heroResp = await fetch(`${HERO_SERVICE_URL}/update-hp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          heroId: selectedHeroId,
+          hpChange: data.hpLost
+        })
+      });
+      
+      if (!heroResp.ok) {
+        const err = await heroResp.json();
+        showMessage(`Erreur mise à jour HP: ${err.error}`, true);
+      }
+    }
+    
+    // Recharger les infos du héros
+    loadHeroes();
+    
+  } catch (error) {
+    showMessage('Erreur réseau lors du combat.', true);
+    console.error(error);
+  }
+}
+
+// Modifiez la fonction moveTo pour gérer le combat
 function moveTo(targetX, targetY, run) {
   if (!run) {
     showMessage('Aucune run active.', true);
@@ -524,7 +642,13 @@ function moveTo(targetX, targetY, run) {
         showMessage(`Erreur déplacement: ${data.error || ''}`, true);
         return;
       }
+      
       showMessage(data.message, false);
+      
+      if (data.inCombat) {
+        handleCombat();
+      }
+      
       dungeonRunText.textContent = `Position actuelle : x=${data.run.lastPos.x}, y=${data.run.lastPos.y}`;
       if (currentDungeon) {
         renderDungeonMap(currentDungeon, data.run);
