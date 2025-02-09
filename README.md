@@ -13,6 +13,22 @@
 - **Combats Service**: `heroes` (partage la même base que Heroes Service)
 - **Dungeons Service**: `dungeons`
 
+### Entités en base
+- **user**, correspondant à un utilisateur du jeu
+- **userRefreshToken**, correspondant au token de connexion du joueur afin de rafraîchir le token d'accès
+- **dungeon**, correspondant à un donjon avec toutes les différentes cases du donjon
+- **dungeonRun**, correspondant à une partie en cours lié à un **user** et un **hero** permettant la sauvegarde de l'avancée de la partie
+- **hero**, correspondant à un hero avec des hp, gold, level
+
+## Queue et Messages
+### Queues
+- `DUNGEON_QUEUE` correspondant à la queue pour les évènements relatifs au donjon
+- `COMBAT_QUEUE` correspondant à la queue pour les évènements relatifs au combat
+
+### Events
+- `combat.end` lorsqu'un combat arrive à son issue
+- `dungeon.loot` après un combat afin de récupérer des objets dans le niveau
+
 ---
 
 ## API Gateway
