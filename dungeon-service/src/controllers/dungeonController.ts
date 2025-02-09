@@ -10,13 +10,14 @@ const router = express.Router();
 
 router.get('/get-dungeons', async (req: Request, res: Response) => {
     try {
-        const dungeons = await Dungeon.find({});
-        if (dungeons.length === 0) {
-            const randomDungeon = generateRandomDungeon('Random Dungeon', 5, 5);
-            await randomDungeon.save();
-            return res.json(randomDungeon);
-        }
-        res.json(dungeons);
+        // Supprimer tous les donjons existants
+        await Dungeon.deleteMany({});
+        
+        // Générer un nouveau donjon
+        const randomDungeon = generateRandomDungeon('Random Dungeon', 5, 5);
+        await randomDungeon.save();
+        
+        res.json([randomDungeon]);
     } catch (err) {
         console.error('/get-dungeons GET error:', err);
         res.status(500).json({ error: 'Erreur récupération donjons.' });
@@ -87,6 +88,17 @@ router.post('/move',
 
             const cellContent = dungeon.layout[run.lastPos.x][run.lastPos.y];
             const monsters = ["ENNEMY", "BOSS"];
+
+            if (cellContent === "DOOR") {
+                run.isRunning = false;
+                await run.save();
+                return res.json({ 
+                    message: 'Vous avez trouvé la sortie !',
+                    finished: true,
+                    rewards: { gold: 20, level: 1 },
+                    run 
+                });
+            }
 
             if (monsters.includes(cellContent)) {
                 return res.json({ 

@@ -277,6 +277,9 @@ function renderDungeonMap(dungeon, run) {
                 cellDiv.classList.add('bg-red-300');
             } else if (cellType === 'BOSS') {
                 cellDiv.classList.add('bg-red-600', 'text-white');
+            } else if (cellType === 'DOOR') {
+                cellDiv.classList.add('bg-yellow-400');
+                cellDiv.textContent = '🚪';
             }
 
             // Marquer la position du héros
@@ -408,7 +411,7 @@ async function handleCombat() {
     }
 }
 
-// Modifiez la fonction moveTo pour gérer le combat
+
 function moveTo(targetX, targetY, run) {
     if (!run) {
         showMessage('Aucune run active.', true);
@@ -423,7 +426,7 @@ function moveTo(targetX, targetY, run) {
         return;
     }
 
-    // Appeler l'API move avec ces valeurs
+
     fetch(`${DUNGEON_SERVICE_URL}/move`, {
         method: 'POST',
         headers: {
@@ -441,6 +444,28 @@ function moveTo(targetX, targetY, run) {
 
             showMessage(data.message, false);
 
+            if (data.finished && data.rewards) {
+
+                fetch(`${HERO_SERVICE_URL}/update-hero`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        heroId: selectedHeroId,
+                        gold: data.rewards.gold,
+                        level: data.rewards.level
+                    })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    showMessage(`Vous avez gagné ${data.rewards.gold} gold et ${data.rewards.level} level !`, false);
+                    currentRunId = null;
+                    loadHeroes();
+                });
+            }
+
             if (data.inCombat) {
                 handleCombat();
             }
@@ -449,11 +474,6 @@ function moveTo(targetX, targetY, run) {
             if (currentDungeon) {
                 renderDungeonMap(currentDungeon, data.run);
             }
-            if (data.run.finished) {
-                currentRunId = null;
-                showMessage('Donjon terminé !', false);
-            }
-            run.lastPos = data.run.lastPos;
         })
         .catch(error => {
             showMessage('Erreur réseau lors du déplacement.', true);
@@ -469,7 +489,6 @@ btnMove.addEventListener('click', async () => {
         return;
     }
     try {
-        // Ici, vous pouvez modifier moveX et moveY selon votre logique (exemple: avancer vers la droite)
         const resp = await fetch(`${DUNGEON_SERVICE_URL}/move`, {
             method: 'POST',
             headers: {

@@ -9,7 +9,7 @@ const Dungeon = new Schema<IDungeon>({
 	name: String,
 	layout: [
 		[
-			{type: String, enum: ["FLOOR", "ENNEMY", "BOSS"], default: "FLOOR"}
+			{type: String, enum: ["FLOOR", "ENNEMY", "BOSS", "DOOR"], default: "FLOOR"}
 		],
 	],
 });
