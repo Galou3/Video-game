@@ -445,7 +445,6 @@ function moveTo(targetX, targetY, run) {
             showMessage(data.message, false);
 
             if (data.finished && data.rewards) {
-
                 fetch(`${HERO_SERVICE_URL}/update-hero`, {
                     method: 'POST',
                     headers: {
@@ -462,7 +461,14 @@ function moveTo(targetX, targetY, run) {
                 .then(result => {
                     showMessage(`Vous avez gagné ${data.rewards.gold} gold et ${data.rewards.level} level !`, false);
                     currentRunId = null;
-                    loadHeroes();
+                    
+                    // Ajout de cette partie pour rediriger vers la sélection des héros
+                    if (data.shouldRedirect) {
+                        dungeonPanel.classList.add('hidden');
+                        heroPanel.classList.remove('hidden');
+                        document.getElementById("healthContainer").classList.add("hidden");
+                        loadHeroes();
+                    }
                 });
             }
 

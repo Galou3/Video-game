@@ -96,7 +96,8 @@ router.post('/move',
                     message: 'Vous avez trouvé la sortie !',
                     finished: true,
                     rewards: { gold: 20, level: 1 },
-                    run 
+                    run,
+                    shouldRedirect: true
                 });
             }
 
