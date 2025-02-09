@@ -1,5 +1,14 @@
 # Routes de l'Application
 
+# Comment lancer l'application
+- Lancer la commande `docker compose up` puis ouvrir dans son navigateur le fichier `index.html` disponible dans `/frontend`.
+- **Si le docker compose ne marche pas, lancer les deux scripts bash `common-mongo-for-testing.sh` puis `common-rabbitmq-for-testing.sh`, aller ensuite dans chaque répertoire et lancer la commande `npm install` puis `npm run dev` dans cet ordre :**
+   - `/api-gateway`
+   - `/auth-service`
+   - `/dungeon-service`
+   - `/combat-service`
+   - `/hero-service`
+
 ## Technologies
 - **Base de données**: MongoDB
 - **ORM**: Mongoose
