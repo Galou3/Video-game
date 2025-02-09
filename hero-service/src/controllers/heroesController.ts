@@ -91,10 +91,49 @@ async (req: Request, res: Response, next: NextFunction) : Promise<any> => {
         }
 
         await hero.save();
-
+        
         return res.status(200).json({ 
             message: 'HP updated successfully',
             currentHp: hero.hp
+        });
+
+    } catch (error: any) {
+        console.log(error.message);
+        return res.status(500).json({ error: 'Erreur interne.' });
+    }
+});
+
+router.post('/update-hero', 
+    [
+        ...getUserValidation,
+        ...getHeroValidation
+    ], validateRequest,
+    async (req: Request, res: Response, next: NextFunction) : Promise<any> => {
+    try {
+        const userId = req.headers['x-user-id'];
+        const { heroId, gold, level, hp } = req.body;
+        
+        const hero = await Hero.findOne({ _id: heroId, userId });
+        
+        if (!hero) {
+            return res.status(404).json({ error: 'Hero not found' });
+        }
+
+        if (gold) {
+            hero.gold += gold;
+        }
+        if (level) {
+            hero.level += level;
+        }
+        if (hp) {
+            hero.hp = hp;
+        }
+
+        await hero.save();
+        
+        return res.status(200).json({ 
+            message: 'Hero updated successfully',
+            hero
         });
 
     } catch (error: any) {

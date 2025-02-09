@@ -371,6 +371,38 @@ async function handleCombat() {
                 const err = await heroResp.json();
                 showMessage(`Erreur mise à jour HP: ${err.error}`, true);
             }
+
+            if (currentHp <= 0) {
+                const updateResp = await fetch(`${HERO_SERVICE_URL}/update-hero`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        heroId: selectedHeroId,
+                        gold: 20,
+                        level: 1,
+                        hp: 100 
+                    })
+                });
+
+                if (!updateResp.ok) {
+                    const err = await updateResp.json();
+                    showMessage(`Erreur mise à jour héros: ${err.error}`, true);
+                }
+
+                // Réinitialiser l'interface
+                currentRunId = null;
+                selectedHeroId = null;
+                currentHp = maxHp;
+                document.getElementById("healthContainer").classList.add("hidden");
+                dungeonPanel.classList.add('hidden');
+                heroPanel.classList.remove('hidden');
+                showMessage('Votre héros est mort mais a gagné 20 pièces d\'or et 1 niveau !', false);
+                loadHeroes();
+                return;
+            }
         }
 
         // Recharger les infos du héros
