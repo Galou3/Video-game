@@ -6,6 +6,7 @@ import {
     createHeroValidation,
     getUserValidation,
     getHeroValidation,
+    deleteHeroValidation
 } from "../validations/heroesValidation";
 
 // @route   GET /get-heroes
@@ -136,6 +137,29 @@ router.post('/update-hero',
             hero
         });
 
+    } catch (error: any) {
+        console.log(error.message);
+        return res.status(500).json({ error: 'Erreur interne.' });
+    }
+});
+
+// @route   DELETE /delete-hero/:id
+// @desc    Delete a hero
+// @access  Private
+router.delete('/delete-hero/:id',
+    [
+        ...deleteHeroValidation
+    ], validateRequest,
+    async (req: Request, res: Response, next: NextFunction) : Promise<any> => {
+    try {
+        const userId = req.headers['x-user-id'];
+        const hero = await Hero.findOneAndDelete({ _id: req.params.id, userId });
+        
+        if (!hero) {
+            return res.status(404).json({ error: 'Hero not found' });
+        }
+        
+        return res.status(200).json({ message: 'Héro supprimé avec succès.' });
     } catch (error: any) {
         console.log(error.message);
         return res.status(500).json({ error: 'Erreur interne.' });
