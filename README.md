@@ -1,5 +1,20 @@
 # Routes de l'Application
 
+## Technologies
+- **Base de données**: MongoDB
+- **ORM**: Mongoose
+- **Message Broker**: RabbitMQ
+- **Framework Backend**: Express.js
+- **Frontend**: HTML5, Tailwind CSS
+
+## Bases de Données
+- **Auth Service**: `auth`
+- **Heroes Service**: `heroes`
+- **Combats Service**: `heroes` (partage la même base que Heroes Service)
+- **Dungeons Service**: `dungeons`
+
+---
+
 ## API Gateway
 - **Port**: 3000
 - **Base URL**: `http://localhost:3000`
