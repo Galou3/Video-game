@@ -27,10 +27,7 @@ router.post('/attack', async (req: Request, res: Response) => {
     let hpLost = 0;
     if (result === 'lose') {
       hpLost = Math.floor(Math.random() * 10) + 1; // Dégâts fixes pour simplifier
-    } else if (result === 'win') {
-      hpLost = -5; // Soin si victoire
     }
-
     res.json({
       message: result === 'win'
         ? "Tu as gagné le combat !"
