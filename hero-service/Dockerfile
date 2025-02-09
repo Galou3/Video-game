@@ -10,4 +10,4 @@ COPY . .
 
 EXPOSE 3002
 
-CMD ["node", "index.ts"]
+CMD ["npm", "run", "dev"]

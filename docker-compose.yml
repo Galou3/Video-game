@@ -91,7 +91,7 @@ services:
       - rabbitmq
     environment:
       MONGO_URI: mongodb://mongodb:27017/heroesdb
-      RABBITMQ_URI: amqp://admin:admin@rabbitmq:5672
+      RABBITMQ_URI: amqp://admin:admin@rabbitmq:15672
     networks:
       - microservices-net
 
