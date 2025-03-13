@@ -24,6 +24,27 @@ services:
     volumes:
       - mongo_data:/data/db
 
+  # ---- ApiGateway ----
+  api-gateway:
+    build:
+      context: ./api-gateway    # Dockerfile et code dans /apigateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+      - rabbitmq
+    ports:
+      - "3000:3000"
+    environment:
+      # Quelques variables d'exemple
+      PORT: 3000
+      JWT_SECRET_KEY: monSecretJWT
+      MONGO_URI: mongodb://mongodb:27017/authdb
+      RABBITMQ_URI: amqp://admin:admin@rabbitmq:5672
+    networks:
+      - microservices-net
+
   # ---- AuthService ----
   auth-service:
     build:
