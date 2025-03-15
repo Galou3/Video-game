@@ -4,8 +4,8 @@
    - `/api-gateway`
    - `/auth-service`
    - `/dungeon-service`
-   - `/combat-service`
    - `/hero-service`
+   - `/combat-service`
 
 ## Technologies
 - **Base de données**: MongoDB
